@@ -1,0 +1,120 @@
+\section{Online Passenger Allocation Problem}
+%\label{sec:OPAP}
+
+
+
+
+{\bf General Passenger Allocation Problem}
+Given $m$ buses, their routes, the capacity $k_j$ for the $j$-th bus and $n$ orders, the general passenger allocation (GPA) problem is to determine which order should be accepted to which bus such that the total number of the accepted orders is maximized and the capacity constraints of each bus cannot be violated.
+
+
+
+Let $x_{ij}$ represent that the passenger in $i$-th order is allocated to the $j$-th bus. Denote by $d_i$ the destination station of the passenger in the $i$-th order and $S_j$ the station set that the $j$-th bus passes. Therefore, we can use $d_i \in S_j$ to represent that the $j$-th bus can take the $i$-th passenger to his destination. Based on the above notations, we can formulate the GPA problem as a linear integer program~\eqref{Eq:GPA}. Constraint~\eqref{Eq:GPA-Constr-Allocation} ensures that each passenger can allocated to at most one bus while Constraint~\eqref{Eq:GPA-Constr-Capacity} guarantees that the total number of the passengers in each bus is bounded by the bus capacity.
+
+
+{\bf Primal programming:}
+\begin{subequations}\label{Eq:GPA}
+\centering
+\begin{align}
+	\max & \quad \sum_{i = 1}^n \sum_{j: d_i \in S_j} x_{ij}, \quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\eqref{Eq:GPA}\notag\\
+	\text{s.t.} & \quad \sum_{j: d_i \in S_j} x_{ij} \le 1, \ \forall 1 \le i \le n, \label{Eq:GPA-Constr-Allocation} \\
+    & \quad \sum_{i: d_i \in S_j} x_{ij} \le k_j, \ \forall 1 \le j \le m, \label{Eq:GPA-Constr-Capacity} \\
+    & \quad x_{ij} \in \{0,1\} , \ \forall 1 \le i \le n, 1 \le j \le m \label{Eq:GPA-Constr-X}
+\end{align}
+\end{subequations}
+
+
+
+
+
+Before the formal analysis, we relax the above integer program~\eqref{Eq:GPA} to a linear program by replacing $x_{ij} \in \{0,1\}$ with $x_{ij} \ge 0$ and take the dual as follows. 
+
+{\bf Dual programming:}
+\begin{subequations}\label{Eq:GPA-Dual}
+\centering
+\begin{align}
+	\min & \quad \sum_{i = 1}^n y_i + \sum_{j = 1}^m k_j z_j, \quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\eqref{Eq:GPA-Dual}\notag\\
+	\text{s.t.} & \quad y_i + z_j \ge 1, \ \forall 1 \le i \le n, j : d_i \in S_j \label{Eq:GPA-Dual-Constr-Cover} \\
+    & \quad y_i \ge 0 , \ \forall 1 \le i \le n\label{Eq:GPA-Dual-Constr-Y} \\
+    & \quad z_j \ge 0 , \ \forall 1 \le j \le m\label{Eq:GPA-Dual-Constr-Z}
+\end{align}
+\end{subequations}
+
+\begin{algorithm}[h]
+\caption{Most Remaining Seats First (MRSF) Algorithm}
+\label{alg:MRSF}
+\begin{algorithmic}[1]\small
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand{\algorithmicprint}{\textbf{Initialization:}}
+\REQUIRE $m, (S_1, \ldots, S_m), (k_1, \ldots, k_m)$.
+\ENSURE The passenger set in each bus $B_1, \ldots, B_m$.
+\FOR{$j \gets 1$ \TO $m$}
+    \STATE $B_j \gets \emptyset$.
+    \STATE $R_j \gets k_j$.
+\ENDFOR
+\WHILE{order $(i, d_i)$ arrives}
+    \STATE $j^* \gets \arg \max_{j:d_i \in S_j} R_j$.
+    \IF{$R_{j^*} \le 0$}
+        \STATE reject order $(i, d_i)$.
+    \ELSE
+        \STATE $B_{j^*} \gets B_{j^*} \cup \{i\}$.
+        \STATE $R_{j^*} \gets R_{j^*} - 1$.
+    \ENDIF
+\ENDWHILE
+\RETURN{$B_1,\ldots,B_m$}.
+\end{algorithmic}
+\end{algorithm}
+\vspace{-0em}
+
+\begin{theorem}\label{theorem:MRSF}
+Algorithm~MRSF is a $\frac{1}{2}$-competitive algorithm for the online GPA problem.
+\end{theorem}
+
+\begin{proof}
+{
+    ~
+    \par \(Add\ 2\ operations\ in\ MRSF:\)
+    \par \quad \(Every\ time\ order(i, d_i)\ is\ accepted\)
+    \par \quad \(y_i\leftarrow 1\)
+    \par \quad \(z_{j^*}\leftarrow z_{j^*} + 1/k_{j*}\)
+    \par \(Let\ P\ and\ D\ be\ the\ values\ of\ the\ objective\ functions\)\\
+    \(of\ the\ primal\ and\ dual\ solutions\ produced\)
+    \par \(Initially,\ P=D=0(x_{ij}=y_i=z_j=0)\)
+    \par \(Let\ \Delta P\ and\ \Delta D\ be\ the\ changes\ in\ a\ single\ iteration\)
+    \par \(Let\ \tilde{x}\ and\ (\tilde{y}, \tilde{z})\ be\ the\ solution\)
+    \par \(Prove\ 3\ claims:\)
+    \par \quad (1)\(\tilde{x}\ is\ feasible\ for\ the\ primal\ problem\)
+    \par \quad (2)\((\tilde{y}, \tilde{z})\ is\ feasible\ for\ the\ dual\ problem\)
+    \par \quad (3)\(\Delta D \leq 2\Delta P\)
+    \par \(For\ claim(1)\)
+    \par \(\because each\ i\ is\ at\ most\ in\ one\ of\ B_1,...,B_m\)
+    \par \(\therefore \forall 1\leq i\leq n,\ \sum_{j:d_i\in S_j}x_{ij}\leq 1\ is\ true\)
+    \par \(\because order(i, d_i)\ is\ rejected\ \iff\ \max_{j:d_i\in S_j}R_j\leq 0(R_j = k_j - |B_j|)\)
+    \par \(\therefore \forall 1\leq j\leq m,\ \sum_{i:d_i\in S_j}x_{ij} = |B_j|\leq k_j\ is\ true\)
+    \par \(\therefore claim(1)\ is\ proved\)
+    \par \(For\ claim(2)\)
+    \par \(if\ (i, d_i)\ is\ accepted\)
+    \par \(y_i = 1, z_j\geq 0, y_i+z_j\geq 1(\forall j:d_i\in S_j)\)
+    \newpage
+    \par \(else,\ \max_{j:d_i\in S_j}R_j\leq 0\)
+    \par \(so\ z_j\geq k_j\times \frac1{k_j} = 1,\ y_i+z_j\geq 1(\forall j:d_i\in S_j)\)
+    \par \(\therefore \forall 1\leq i\leq n, j:d_i\in S_j,\ y_i+z_j\geq 1\)
+    \par \(\therefore claim(2)\ is\ true\)
+    \par \(For\ claim(3)\)
+    \par \(if\ (i, d_i)\ is\ rejected\)
+    \par \(\Delta P = \Delta D = 0\)
+    \par \(else,\ \Delta P = 1\)
+    \par \(\Delta D = 1 + k_{j^*}/k_{j^*} = 2\)
+    \par \(\therefore in\ single\ iteration,\ \Delta D \leq 2\Delta P\)
+    \par \(\therefore claim(3)\ is\ true\)
+    \par \(Hark back\)
+    \par \(\because Initially,\ P=D=0\)
+    \par \(\therefore At\ last,\ D\leq 2P\)
+    \par \(Let\ OPT\ be\ the\ optimal\ solution,\ we\ have\ P\leq OPT\leq D\leq 2P\)
+    \par \(\therefore P\geq \frac12 OPT\)
+    \par \(\therefore MRSF\ is\ a\ \frac12-competitive\ algorithm\ for\ the\ online\ GPA\ program\)
+}
+\end{proof}
+
+
